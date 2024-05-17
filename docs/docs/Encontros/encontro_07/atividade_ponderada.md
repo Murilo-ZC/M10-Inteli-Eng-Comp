@@ -19,7 +19,13 @@ A aplicação deve estar conteinerizada e deve ser entregue com o Dockerfile e o
 
 Como barema de correção da atividade, serão considerados os seguintes aspectos:
 
-
+| Faixa de Nota   | Conceito | Descrição  |
+|:----------:|:----------|-------:|
+| 0 - 2      | Não Iníciou        | O desenvolvimento do projeto não foi totalmente iniciado. Ele se resumiu a utilizar os templates iniciais. Não existe nenhuma integração entre as partes do sistema|
+| 2.1 - 4    | Entrega Incompleta          | As aplicações, aplicativo e backend foram iniciadas. Elas não estão integradas. A aplicação mobile não segue nenhum padrão dos abordados nos encontros. A aplicação do backend não foi implementada utilizando microsserviços e/ou não está containerizada.|
+| 4.1 - 6   | Atende Parcialmente          | O aplicativo foi desenvolvido e está parcialmente integrado com o backend. O backend foi desenvolvido utilizando uma arquitetura monolítica e não está com todas as suas funcionalidades desenvolvidas. A integração não |
+| 6.1 - 9   | Atendeu os requisitos          | TO-DO |
+| 9.1 - 10   | Supera os requisitos apresentados          | TO-DO |
 
 ---
 
