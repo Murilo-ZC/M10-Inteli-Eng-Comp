@@ -30,12 +30,14 @@ class Display extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(15),
             alignment: Alignment.centerRight,
-            child: Text(
-              userData,
-              style: const TextStyle(
-                fontSize: 48,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+            child: FittedBox(
+              child: Text(
+                userData != "" ? userData : "0",
+                style: const TextStyle(
+                  fontSize: 48,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),

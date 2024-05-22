@@ -6,7 +6,7 @@ class Keypad extends StatelessWidget {
     required this.buttons,
   });
 
-  final List<String> buttons;
+  final List<Map> buttons;
 
   @override
   Widget build(BuildContext context) {
@@ -20,18 +20,18 @@ class Keypad extends StatelessWidget {
         itemBuilder: (BuildContext context, int index) {
           // Cria um botão
           return GestureDetector(
-            onTap: (){},
+            onTap: buttons[index].containsKey("action")?buttons[index]["action"]:(){},
             child: Padding(
               padding: const EdgeInsets.all(4.0),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
-                  color: Colors.white70,
+                  color: buttons[index]['backcolor'],
                   child: Center(
                     child: Text(
-                      buttons[index],
-                      style: const TextStyle(
-                        color: Colors.black,
+                      buttons[index]['text'],
+                      style: TextStyle(
+                        color: buttons[index]['textcolor'],
                         fontSize: 25,
                         fontWeight: FontWeight.bold,
                       ),
