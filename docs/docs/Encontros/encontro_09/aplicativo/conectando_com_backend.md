@@ -16,3 +16,15 @@ Pessoal para essa etapa do nosso projeto, vamos trabalhar com a comunicação en
 Pessoal existem duas versões do aplicativo no repositório. Durante o encontro, vamos continuar com a versão `checkpoint` que é a versão do aplicativo desenvolvida até esse momento.
 
 :::
+
+## Requisições HTTP
+
+Para fazer requisições HTTP no Flutter, vamos utilizar a biblioteca `http`. Para adicionar essa biblioteca ao nosso projeto, vamos adicionar a seguinte dependência no arquivo `pubspec.yaml`:
+
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.1
+```
+Agora vamos fazer uma requisição HTTP para o nosso backend. Para isso, vamos configurar a ação do botão '😁' para que ele faça a operação do botão `=`, mas enviando ela para o servidor.

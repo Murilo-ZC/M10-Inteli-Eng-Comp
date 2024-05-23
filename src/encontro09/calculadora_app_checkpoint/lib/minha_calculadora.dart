@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:calculadora_app/display.dart';
 import 'package:calculadora_app/keypad.dart';
 import 'package:flutter/material.dart';
 import 'package:math_expressions/math_expressions.dart';
+import 'package:http/http.dart' as http;
 
 class MinhaCalculadora extends StatefulWidget {
   const MinhaCalculadora({super.key});
@@ -75,6 +78,18 @@ class _MinhaCalculadoraState extends State<MinhaCalculadora> {
     double eval = exp.evaluate(EvaluationType.REAL, cm);
     return eval.toString();
   }
+
+  Future<String> avaliarExpressaoServidor() async{
+    String finaluserinput = userData;
+    finaluserinput = finaluserinput.replaceAll('x', '*');
+    print({"expressao":"$finaluserinput"});
+    // Realiza a requisição utilizando o http
+    // O servidor deve estar rodando para que a requisição funcione
+    var resultado = await http.post(Uri.http("10.152.0.144:8000", "/evaluate"), body: {'expressao':'$finaluserinput'});
+    print(resultado.body);
+    var saida = jsonDecode(resultado.body) as Map;
+    return saida["resultado"];
+  }
   // Array com os botões da calculadora
   // A lista foi dividida em 4 linhas
   List<Map> buttons = [];
@@ -100,7 +115,7 @@ class _MinhaCalculadoraState extends State<MinhaCalculadora> {
     {'text': '=', 'backcolor': Colors.orange, 'textcolor': Colors.white, "action": (){setResult(avaliarExpressao()); setUserData("0");}},
     {'text': 'DEL', 'backcolor': Colors.red, 'textcolor': Colors.white, "action":(){removeLast();}},
     {'text': '⚙️', 'backcolor': Colors.blue, 'textcolor': Colors.white},
-    {'text': '😁', 'backcolor': Colors.blue, 'textcolor': Colors.white},
+    {'text': '😁', 'backcolor': Colors.blue, 'textcolor': Colors.white, "action":()async{setResult(await avaliarExpressaoServidor()); setUserData("0");}},
   ];
   }
 
