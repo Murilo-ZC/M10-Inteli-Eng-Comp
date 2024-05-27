@@ -1,10 +1,12 @@
 import 'dart:convert';
 
+import 'package:calculadora_app/configuracao_servidor.dart';
 import 'package:calculadora_app/display.dart';
 import 'package:calculadora_app/keypad.dart';
 import 'package:flutter/material.dart';
 import 'package:math_expressions/math_expressions.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MinhaCalculadora extends StatefulWidget {
   const MinhaCalculadora({super.key});
@@ -16,6 +18,7 @@ class MinhaCalculadora extends StatefulWidget {
 class _MinhaCalculadoraState extends State<MinhaCalculadora> {
   String userData = '0';
   String result = "";
+  String serverUrl = '';
 
   void appendUserData(String data) {
     setState(() {
@@ -68,6 +71,21 @@ class _MinhaCalculadoraState extends State<MinhaCalculadora> {
     });
   }
 
+  Future<void> getServerUrl() async{
+    // Recupera a instância do SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    // Recupera o valor da chave 'serverUrl'
+    serverUrl = prefs.getString('serverUrl') ?? '';
+  }
+
+  void showSnackBar(String message){
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
+    );
+  }
+
   String avaliarExpressao(){
     String finaluserinput = userData;
     finaluserinput = finaluserinput.replaceAll('x', '*');
@@ -82,13 +100,21 @@ class _MinhaCalculadoraState extends State<MinhaCalculadora> {
   Future<String> avaliarExpressaoServidor() async{
     String finaluserinput = userData;
     finaluserinput = finaluserinput.replaceAll('x', '*');
-    print({"expressao":"$finaluserinput"});
+    print(jsonEncode({"expressao":finaluserinput}));
     // Realiza a requisição utilizando o http
+    // Pega a URL do servidor do SharedPreferences
+    await getServerUrl();
+    if (serverUrl == ''){
+      showSnackBar('URL do servidor não configurada!');
+      return '';
+    }
     // O servidor deve estar rodando para que a requisição funcione
-    var resultado = await http.post(Uri.http("10.152.0.144:8000", "/evaluate"), body: {'expressao':'$finaluserinput'});
+    var resultado = await http.post(Uri.parse(serverUrl), headers: <String, String>{
+      'Content-Type': 'application/json; charset=UTF-8',
+    }, body: jsonEncode(<String, String>{"expressao":finaluserinput}));
     print(resultado.body);
     var saida = jsonDecode(resultado.body) as Map;
-    return saida["resultado"];
+    return saida["resultado"].toString();
   }
   // Array com os botões da calculadora
   // A lista foi dividida em 4 linhas
@@ -114,7 +140,9 @@ class _MinhaCalculadoraState extends State<MinhaCalculadora> {
     {'text': '+', 'backcolor': Colors.orange, 'textcolor': Colors.white, "action":(){if(!checkIfOperation()) appendUserData('+');}},
     {'text': '=', 'backcolor': Colors.orange, 'textcolor': Colors.white, "action": (){setResult(avaliarExpressao()); setUserData("0");}},
     {'text': 'DEL', 'backcolor': Colors.red, 'textcolor': Colors.white, "action":(){removeLast();}},
-    {'text': '⚙️', 'backcolor': Colors.blue, 'textcolor': Colors.white},
+    {'text': '⚙️', 'backcolor': Colors.blue, 'textcolor': Colors.white, "action":(){
+      Navigator.push(context, MaterialPageRoute(builder:(context) => const configuracao_servidor()));
+    }},
     {'text': '😁', 'backcolor': Colors.blue, 'textcolor': Colors.white, "action":()async{setResult(await avaliarExpressaoServidor()); setUserData("0");}},
   ];
   }
