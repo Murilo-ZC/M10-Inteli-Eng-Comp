@@ -23,9 +23,9 @@ Como barema de correção da atividade, serão considerados os seguintes aspecto
 |:----------:|:----------|-------:|
 | 0 - 2      | Não Iníciou        | O desenvolvimento do projeto não foi totalmente iniciado. Ele se resumiu a utilizar os templates iniciais. Não existe nenhuma integração entre as partes do sistema|
 | 2.1 - 4    | Entrega Incompleta          | As aplicações, aplicativo e backend foram iniciadas. Elas não estão integradas. A aplicação mobile não segue nenhum padrão dos abordados nos encontros. A aplicação do backend não foi implementada utilizando microsserviços e/ou não está containerizada.|
-| 4.1 - 6   | Atende Parcialmente          | O aplicativo foi desenvolvido e está parcialmente integrado com o backend. O backend foi desenvolvido utilizando uma arquitetura monolítica e não está com todas as suas funcionalidades desenvolvidas. A integração não |
-| 6.1 - 9   | Atendeu os requisitos          | TO-DO |
-| 9.1 - 10   | Supera os requisitos apresentados          | TO-DO |
+| 4.1 - 6   | Atende Parcialmente          | O aplicativo foi desenvolvido e está parcialmente integrado com o backend. O backend foi desenvolvido utilizando uma arquitetura monolítica e não está com todas as suas funcionalidades desenvolvidas. A integração não foi totalmente realizada.|
+| 6.1 - 9   | Atendeu os requisitos          | O aplicativo foi desenvolvido e está integrado com o backend. O backend foi desenvolvido utilizando uma arquitetura de microsserviços e está com todas as suas funcionalidades desenvolvidas. A integração foi totalmente realizada. |
+| 9.1 - 10   | Supera os requisitos apresentados          |  aplicativo foi desenvolvido e está integrado com o backend. O backend foi desenvolvido utilizando uma arquitetura de microsserviços e está com todas as suas funcionalidades desenvolvidas. A integração foi totalmente realizada. O aplicativo foi construído utilizando as práticas de desenvolvimento de software apresentadas em aula e outras práticas de mercado. O backend foi construido e documentado para que mais funcionalidades possam ser adicionadas nele sem grandes complicações. |
 
 ---
 

@@ -297,12 +297,16 @@ class _configuracao_servidorState extends State<configuracao_servidor> {
 
 Vamos observar o que foi feito aqui:
 
-1. Criamos um `TextEditingController` para controlar o campo de texto que vai receber o endereço do servidor.
-2. Criamos uma variável `_url` que vai guardar o endereço do servidor.
-3. Criamos o método `recuperarUrl` que é responsável por recuperar o endereço do servidor salvo no `SharedPreferences`. Reparem que esté método é assíncrono, pois ele precisa aguardar a resposta do `SharedPreferences`. Nele, verificamos se existe um valor salvo com a chave `serverUrl` e, caso exista, salvamos esse valor na variável `_url` e atualizamos o campo de texto `_controller`.
-4. No método `build`, chamamos o método `recuperarUrl` para que o endereço do servidor seja recuperado sempre que a tela for construída. Como esté método vai chamar o `setState`, ele vai atualizar o campo de texto `_controller` quando for necessário.
-5. Criamos um `TextField` para que o usuário possa digitar o endereço do servidor.
-6. Criamos um `ElevatedButton` que vai ser responsável por salvar o endereço do servidor no `SharedPreferences`. Quando o botão for pressionado, ele vai salvar o valor do campo de texto `_url` no `SharedPreferences` com a chave `serverUrl`. Além disso, ele exibe um `SnackBar` para informar ao usuário que o endereço foi salvo com sucesso.
+1. Importamos a biblioteca `shared_preferences` no início do arquivo.
+2. Criamos uma classe chamada `configuracao_servidor` que é um `StatefulWidget`.
+3. Criamos um `TextEditingController` chamado `_controller` que vai ser responsável por controlar o campo de texto que vai receber o endereço do servidor.
+4. Criamos uma variável chamada `_url` que vai guardar o endereço do servidor.
+5. Criamos o método `recuperarUrl` que é responsável por recuperar o endereço do servidor salvo no `SharedPreferences`.
+6. No método `initState`, chamamos o método `recuperarUrl` para recuperar o endereço do servidor salvo no `SharedPreferences`.
+7. No método `build`, criamos um `Scaffold` que é a estrutura da tela.
+8. Adicionamos um `TextField` que é o campo de texto que vai receber o endereço do servidor.
+9. Adicionamos um `ElevatedButton` que é o botão que vai salvar o endereço do servidor no `SharedPreferences`.
+10. No `onPressed` do botão, salvamos o endereço do servidor no `SharedPreferences` e exibimos um `SnackBar` informando que o endereço foi salvo com sucesso.
 
 Agora temos dois desafios:
 
