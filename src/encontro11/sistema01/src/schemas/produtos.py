@@ -6,8 +6,8 @@ from datetime import datetime
 class Produto(BaseModel):
     id: int
     nome: str
-    email: str
-    senha: str
+    descricao: str
+    preco: float
     data_criacao: datetime
     data_modificacao: datetime
 

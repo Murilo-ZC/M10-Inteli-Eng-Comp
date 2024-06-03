@@ -1,13 +1,13 @@
 ---
 sidebar_position: 4
-title: Implementando Logs
+title: Implementando Logs - Projeto Base
 ---
 
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## Implementando o sistema de Logs
+## Implementando o sistema de Logs - Projeto Base
 
 Primeiro vamos definir a estrutura da nossa aplicação. Ela vai ser composta por 2 CRUDs, um para usuários e outro para produtos. Vamos primeiro realizar essa implementação localmente e depois migrar ela para um container Docker e algumas coisitas amais.
 
@@ -604,3 +604,165 @@ Vamos criar o arquivo `schemas/produtos.py` para definir o modelo de dados dos p
 
 ```python title="src/schemas/produtos.py" showLineNumbers=true
 # schemas/produtos.py
+
+from pydantic import BaseModel
+from datetime import datetime
+
+class Produto(BaseModel):
+    id: int
+    nome: str
+    descricao: str
+    preco: float
+    data_criacao: datetime
+    data_modificacao: datetime
+
+    class Config:
+        orm_mode = True
+```
+
+Agora vamos criar o arquivo `repositories/produtos.py` para definir o repositório de produtos.
+
+```python title="src/repositories/produtos.py" showLineNumbers=true
+# src/repository/produtos.py
+
+from models.produtos import Produto
+from sqlalchemy.orm import Session
+from datetime import datetime
+
+class ProdutoRepository:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def get(self, produto_id):
+        return self.db.query(Produto).get(produto_id)
+
+    def get_all(self):
+        return self.db.query(Produto).all()
+
+    def add(self, produto: Produto):
+        produto.id = None
+        produto.data_criacao = datetime.now()
+        self.db.add(produto)
+        self.db.flush()
+        self.db.commit()
+        return {"message": "Produto cadastrado com sucesso"}
+
+    def update(self, produto_id, produto):
+        produtodb = self.db.query(Produto).filter(Produto.id == produto_id).first()
+        if produtodb is None:
+            return {"message": "Produto não encontrado"}
+        produto.data_modificacao = datetime.now()
+        produto = produto.__dict__
+        produto.pop("_sa_instance_state")
+        produto.pop("data_criacao")
+        produto.pop("id")
+        self.db.query(Produto).filter(Produto.id == produto_id).update(produto)
+        self.db.flush()
+        self.db.commit()
+        return {"message": "Produto atualizado com sucesso"}
+
+    def delete(self, produto_id):
+        produtodb = self.db.query(Produto).filter(Produto.id == produto_id).first()
+        if produtodb is None:
+            return {"message": "Produto não encontrado"}
+        self.db.query(Produto).filter(Produto.id == produto_id).delete()
+        self.db.flush()
+        self.db.commit()
+        return {"message": "Produto deletado com sucesso"}
+        
+```
+
+Para acessar esse repositório, vamos criar o arquivo `services/produtos.py`.
+
+```python title="src/services/produtos.py" showLineNumbers=true
+# src/services/produtos.py
+
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+from repository.produtos import ProdutoRepository
+from models.produtos import Produto
+from schemas.produtos import Produto as ProdutoSchema
+
+class ProdutoService:
+    def __init__(self, db: Session):
+        self.repository = ProdutoRepository(db)
+
+    def get(self, produto_id):
+        produto = self.repository.get(produto_id)
+        if produto is None:
+            raise HTTPException(status_code=404, detail="Produto não encontrado")
+        return produto
+
+    def get_all(self):
+        return self.repository.get_all()
+
+    def add(self, produto : ProdutoSchema):
+        produto = Produto(**produto.dict())
+        return self.repository.add(produto)
+
+    def update(self, produto_id, produto : ProdutoSchema):
+        produto = Produto(**produto.dict())
+        return self.repository.update(produto_id, produto)
+
+    def delete(self, produto_id):
+        return self.repository.delete(produto_id)
+```
+
+Agora vamos criar o arquivo `routers/produtos.py` para definir as rotas de produtos.
+
+```python title="src/routers/produtos.py" showLineNumbers=true
+# src/routers/produtos.py
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from schemas.produtos import Produto as ProdutoSchema
+from services.produtos import ProdutoService
+from databases import database
+
+router = APIRouter()
+
+@router.get("/produtos/{produto_id}")
+async def get_produto(produto_id: int, db: Session = Depends(database.get_db)):
+    produtoService = ProdutoService(db)
+    return produtoService.get(produto_id)
+
+@router.get("/produtos")
+async def get_produtos(db: Session = Depends(database.get_db)):
+    produtoService = ProdutoService(db)
+    return produtoService.get_all()
+
+@router.post("/produtos")
+async def create_produto(produto: ProdutoSchema, db: Session = Depends(database.get_db)):
+    produtoService = ProdutoService(db)
+    return produtoService.add(produto=produto)
+
+@router.put("/produtos/{produto_id}")
+async def update_produto(produto_id: int, produto: ProdutoSchema, db: Session = Depends(database.get_db)):
+    produtoService = ProdutoService(db)
+    return produtoService.update(produto_id, produto=produto)
+    
+
+@router.delete("/produtos/{produto_id}")
+async def delete_produto(produto_id: int, db: Session = Depends(database.get_db)):
+    produtoService = ProdutoService(db)
+    return produtoService.delete(produto_id)
+```
+
+E fechamos com o arquivo `main.py`.
+
+```python title="src/main.py" showLineNumbers=true
+# src/main.py
+
+from fastapi import FastAPI
+from routers import usuarios, produtos
+
+app = FastAPI()
+
+app.include_router(usuarios.router)
+app.include_router(produtos.router)
+
+```
+
+Ufa! Terminamos a base da nossa aplicação. Agora temos um CRUD de usuários e um CRUD de produtos. Testem ela, utilizem o Swagger para testar as rotas e vejam se tudo está funcionando corretamente. Utilizem o DBeaver para verificar se o conteúdo do banco foi persistido efetivamente. Modifiquem e interajam com a aplicação para melhorar a compreensão de como ela está funcionando.
+
+Agora que temos nossa aplicação base, vamos implementar os logs nela. Mas vamos fazer isso em outro ponto do nosso repositório, assim será possível voltar e verificar o que está acontecendo aqui para comparação!
