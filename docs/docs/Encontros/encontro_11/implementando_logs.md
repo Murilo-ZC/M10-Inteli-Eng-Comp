@@ -412,19 +412,195 @@ Pessoal para conhecer melhor esses dois elementos, recomendo a leitura dos artig
 Vamos criar o diretório `src/repositories` e dentro dele vamos criar o arquivo `usuarios.py`.
 
 ```python title="src/repositories/usuarios.py" showLineNumbers=true
-# repositories/usuarios.py
+# src/repository/usuarios.py
+
+from models.usuarios import Usuario
+from sqlalchemy.orm import Session
+from datetime import datetime
+
+class UsuarioRepository:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def get(self, usuario_id):
+        return self.db.query(Usuario).get(usuario_id)
+
+    def get_all(self):
+        return self.db.query(Usuario).all()
+
+    def add(self, usuario: Usuario):
+        usuario.id = None
+        usuario.data_criacao = datetime.now()
+        self.db.add(usuario)
+        self.db.flush()
+        self.db.commit()
+        return {"message": "Usuário cadastrado com sucesso"}
+
+    def update(self, usuario_id, usuario):
+        usuariodb = self.db.query(Usuario).filter(Usuario.id == usuario_id).first()
+        if usuariodb is None:
+            return {"message": "Usuário não encontrado"}
+        usuario.data_modificacao = datetime.now()
+        usuario = usuario.__dict__
+        usuario.pop("_sa_instance_state")
+        usuario.pop("data_criacao")
+        usuario.pop("id")
+        self.db.query(Usuario).filter(Usuario.id == usuario_id).update(usuario)
+        self.db.flush()
+        self.db.commit()
+        return {"message": "Usuário atualizado com sucesso"}
+
+    def delete(self, usuario_id):
+        usuariodb = self.db.query(Usuario).filter(Usuario.id == usuario_id).first()
+        if usuariodb is None:
+            return {"message": "Usuário não encontrado"}
+        self.db.query(Usuario).filter(Usuario.id == usuario_id).delete()
+        self.db.flush()
+        self.db.commit()
+        return {"message": "Usuário deletado com sucesso"}
+        
 ```
 
+Para facilitar a conexão com o banco de dados, vamos criar o arquivo `src/databases/database.py`:
+
+```python title="src/databases/database.py" showLineNumbers=true
+# src/databases/database.py
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+
+SQLALCHEMY_DATABASE_URL = "sqlite:///database.db"
+
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=True, bind=engine)
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+```
+
+O que estamos fazendo aqui:
+
+- `SQLALCHEMY_DATABASE_URL`: URL de conexão com o banco de dados. Define onde o banco está localizado.
+- `engine`: Cria uma instância do `Engine` do SQLAlchemy. O `Engine` é responsável por se conectar ao banco de dados e executar as queries. O `connect_args={"check_same_thread": False}` é utilizado para permitir que o SQLite seja utilizado em ambientes multi-thread.
+- `SessionLocal`: Cria uma instância do `SessionLocal` do SQLAlchemy. O `SessionLocal` é responsável por criar uma sessão do banco de dados. A sessão é utilizada para realizar as operações de leitura, escrita, atualização e exclusão dos dados.
+- `get_db()`: Cria uma função que retorna uma sessão do banco de dados. Essa função é utilizada para criar uma sessão do banco de dados e fechá-la após o uso. O `yield` é utilizado com o objetivo de criar um gerador. O gerador é utilizado para criar uma sessão do banco de dados e fechá-la após o uso.
+
+Agora vamos criar o nosso serviço que vai dar acesso ao nosso repositório de usuários. Importante notar aqui que a camada de serviço tem por objetivo trazer a lógica de negócio da nossa aplicação. Vamos criar o arquivo `src/services/usuarios.py`.
+
+```python title="src/services/usuarios.py" showLineNumbers=true
+# src/services/usuarios.py
+
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+from repository.usuarios import UsuarioRepository
+from models.usuarios import Usuario
+from schemas.usuarios import Usuario as UsuarioSchema
+
+class UsuarioService:
+    def __init__(self, db: Session):
+        self.repository = UsuarioRepository(db)
+
+    def get(self, usuario_id):
+        usuario = self.repository.get(usuario_id)
+        if usuario is None:
+            raise HTTPException(status_code=404, detail="Usuario não encontrado")
+        return usuario
+
+    def get_all(self):
+        return self.repository.get_all()
+
+    def add(self, usuario : UsuarioSchema):
+        usuario = Usuario(**usuario.dict())
+        return self.repository.add(usuario)
+
+    def update(self, usuario_id, usuario : UsuarioSchema):
+        usuario = Usuario(**usuario.dict())
+        return self.repository.update(usuario_id, usuario)
+
+    def delete(self, usuario_id):
+        return self.repository.delete(usuario_id)
+```
 
 ### Adicionando rotas para acessar o CRUD de usuários
 
 Vamos criar um diretório `src/routers` e dentro dele vamos criar o arquivo `usuarios.py`. A abordagem de utilizar o diretório `routers` serve para separar as rotas da nossa aplicação. Cada conjunto de rotas vai ser definido em um arquivo separado.
 
 
-
-
 ```python title="src/routers/usuarios.py" showLineNumbers=true
+# routers/usuarios.py
 
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from schemas.usuarios import Usuario as UsuarioSchema
+from services.usuarios import UsuarioService
+from databases import database
 
+router = APIRouter()
 
+@router.get("/usuarios/{usuario_id}")
+async def get_usuario(usuario_id: int, db: Session = Depends(database.get_db)):
+    usuarioService = UsuarioService(db)
+    return usuarioService.get(usuario_id)
+
+@router.get("/usuarios")
+async def get_usuarios(db: Session = Depends(database.get_db)):
+    usuarioService = UsuarioService(db)
+    return usuarioService.get_all()
+
+@router.post("/usuarios")
+async def create_usuario(usuario: UsuarioSchema, db: Session = Depends(database.get_db)):
+    usuarioService = UsuarioService(db)
+    return usuarioService.add(usuario=usuario)
+
+@router.put("/usuarios/{usuario_id}")
+async def update_usuario(usuario_id: int, usuario: UsuarioSchema, db: Session = Depends(database.get_db)):
+    usuarioService = UsuarioService(db)
+    return usuarioService.update(usuario_id, usuario=usuario)
+    
+
+@router.delete("/usuarios/{usuario_id}")
+async def delete_usuario(usuario_id: int, db: Session = Depends(database.get_db)):
+    usuarioService = UsuarioService(db)
+    return usuarioService.delete(usuario_id)
+      
 ```
+
+Agora vamos criar o arquivo `src/main.py`. Esse arquivo vai ser responsável por criar a nossa aplicação e definir as rotas da nossa API.
+
+```python title="src/main.py" showLineNumbers=true
+# src/main.py
+
+from fastapi import FastAPI
+from routers import usuarios
+
+app = FastAPI()
+
+app.include_router(usuarios.router)
+```
+
+Agora vamos executar nossa aplicação:
+
+```bash
+fastapi dev src/main.py
+```
+
+Fizemos muitas coisas aqui, vamos avaliar elas agora:
+
+- Avaliando o `src/services/usuarios.py`: Aqui definimos a lógica de negócio da nossa aplicação. O serviço `UsuarioService` é responsável por abstrair a lógica de negócio da nossa aplicação. Ele é responsável por realizar as operações de validação, tratamento de erros e chamadas a outros serviços.
+- Avaliando o `src/repositories/usuarios.py`: Aqui definimos o acesso ao banco de dados. O repositório `UsuarioRepository` é responsável por abstrair o acesso ao banco de dados. Ele é responsável por realizar as operações de leitura, escrita, atualização e exclusão dos dados.
+- Avaliando o `src/routers/usuarios.py`: Aqui definimos as rotas da nossa aplicação. O roteador `usuarios` é responsável por definir as rotas da nossa aplicação. Ele é responsável por receber as requisições HTTP e chamar os métodos do serviço `UsuarioService`.
+
+Pessoal, aqui fizemos uma abordagem um pouco diferente, construimos todo nosso ambiente para testar o CRUD de usuários. Por que não continuamos e implementamos o CRUD de produtos? Mesmo que os dois CRUDs, nesse momento, sejam muito parecidos, nosso objetivo foi de conseguir testar nossa aplicação. Lembrem-se sempre da máxima, quanto antes testarmos nossa aplicação, mais cedo vamos encontrar os problemas.
+
+Agora vamos implementar o CRUD de produtos.
+
+### Implementando o CRUD de produtos
+
+Vamos criar o arquivo `schemas/produtos.py` para definir o modelo de dados dos produtos.
+
+```python title="src/schemas/produtos.py" showLineNumbers=true
+# schemas/produtos.py
