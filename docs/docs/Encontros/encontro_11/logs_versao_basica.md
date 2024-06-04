@@ -254,5 +254,114 @@ Outro ponto importante! Observe a lógica de backup do arquivo de log que criamo
 Agora vamos alterar nossos arquivos dos routers para adicionar mensagens de log em cada rota. Vamos começar pelo arquivo `usuarios.py`.
 
 ```python title="src/routers/usuarios.py" showLineNumbers=true
+# routers/usuarios.py
 
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from schemas.usuarios import Usuario as UsuarioSchema
+from services.usuarios import UsuarioService
+from databases import database
+import logging
+
+#Cria o logger para o módulo
+LOGGER = logging.getLogger(__name__)
+
+router = APIRouter()
+
+@router.get("/usuarios/{usuario_id}")
+async def get_usuario(usuario_id: int, db: Session = Depends(database.get_db)):
+    LOGGER.info({"message": "Acessando a rota /usuarios/{usuario_id}", "usuario_id": usuario_id, "method": "GET"})
+    usuarioService = UsuarioService(db)
+    return usuarioService.get(usuario_id)
+
+@router.get("/usuarios")
+async def get_usuarios(db: Session = Depends(database.get_db)):
+    LOGGER.info({"message": "Acessando a rota /usuarios", "method": "GET"})
+    usuarioService = UsuarioService(db)
+    return usuarioService.get_all()
+
+@router.post("/usuarios")
+async def create_usuario(usuario: UsuarioSchema, db: Session = Depends(database.get_db)):
+    LOGGER.info({"message": "Acessando a rota /usuarios", "method": "POST", "usuario": usuario.dict()})
+    usuarioService = UsuarioService(db)
+    return usuarioService.add(usuario=usuario)
+
+@router.put("/usuarios/{usuario_id}")
+async def update_usuario(usuario_id: int, usuario: UsuarioSchema, db: Session = Depends(database.get_db)):
+    LOGGER.info({"message": "Acessando a rota /usuarios/{usuario_id}", "method": "PUT", "usuario_id": usuario_id, "usuario": usuario.dict()})
+    usuarioService = UsuarioService(db)
+    return usuarioService.update(usuario_id, usuario=usuario)
+    
+
+@router.delete("/usuarios/{usuario_id}")
+async def delete_usuario(usuario_id: int, db: Session = Depends(database.get_db)):
+    LOGGER.info({"message": "Acessando a rota /usuarios/{usuario_id}", "method": "DELETE", "usuario_id": usuario_id})
+    usuarioService = UsuarioService(db)
+    return usuarioService.delete(usuario_id)
+   
 ```
+
+Observe que desta forma, adicionamos um comportamento de log em cada rota do arquivo `usuarios.py`. Isso nos permite identificar facilmente o que está acontecendo em cada rota e monitorar o comportamento da aplicação.
+
+:::info[FatAPI Middleware]
+
+Pessoal a resposta para a pergunta: "E se eu quiser adicionar logs em todas as rotas da minha aplicação?" é o FastAPI Middleware. O FastAPI Middleware é um recurso que permite adicionar comportamentos em todas as rotas da aplicação. Isso é útil para adicionar comportamentos comuns em todas as rotas, como logs, autenticação, etc.
+
+E por sinal, esse é um dos desafios que devem ser implementados na atividade ponderada!
+
+:::
+
+Pessoal vamos agora adicionar o mesmo comportamento de log no arquivo `produtos.py`.
+
+```python title="src/routers/produtos.py" showLineNumbers=true
+# src/routers/produtos.py
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from schemas.produtos import Produto as ProdutoSchema
+from services.produtos import ProdutoService
+from databases import database
+import logging
+
+LOGGER = logging.getLogger(__name__)
+
+router = APIRouter()
+
+@router.get("/produtos/{produto_id}")
+async def get_produto(produto_id: int, db: Session = Depends(database.get_db)):
+    LOGGER.info({"message": "Acessando a rota /produtos/{produto_id}", "produto_id": produto_id, "method": "GET"})
+    produtoService = ProdutoService(db)
+    return produtoService.get(produto_id)
+
+@router.get("/produtos")
+async def get_produtos(db: Session = Depends(database.get_db)):
+    LOGGER.info({"message": "Acessando a rota /produtos", "method": "GET"})
+    produtoService = ProdutoService(db)
+    return produtoService.get_all()
+
+@router.post("/produtos")
+async def create_produto(produto: ProdutoSchema, db: Session = Depends(database.get_db)):
+    LOGGER.info({"message": "Acessando a rota /produtos", "method": "POST", "produto": produto.dict()})
+    produtoService = ProdutoService(db)
+    return produtoService.add(produto=produto)
+
+@router.put("/produtos/{produto_id}")
+async def update_produto(produto_id: int, produto: ProdutoSchema, db: Session = Depends(database.get_db)):
+    LOGGER.info({"message": "Acessando a rota /produtos/{produto_id}", "method": "PUT", "produto_id": produto_id, "produto": produto.dict()})
+    produtoService = ProdutoService(db)
+    return produtoService.update(produto_id, produto=produto)
+    
+
+@router.delete("/produtos/{produto_id}")
+async def delete_produto(produto_id: int, db: Session = Depends(database.get_db)):
+    LOGGER.info({"message": "Acessando a rota /produtos/{produto_id}", "method": "DELETE", "produto_id": produto_id})
+    produtoService = ProdutoService(db)
+    return produtoService.delete(produto_id)
+```
+
+Agora temos todas as nossas mensagens de log configuradas no nosso sistema! Isso nos permite monitorar o comportamento da aplicação e identificar facilmente o que está acontecendo em cada rota 🐞☕️.
+
+Contudo, ainda não vamos parar aqui! Esses logs precisam ser processados! E como podemos fazer isso?
+
+Me acompanhem na próxima seção!
+
