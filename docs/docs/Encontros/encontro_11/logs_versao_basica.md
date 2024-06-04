@@ -169,6 +169,90 @@ Agora temos nossas mensagens de log no seguinte formato:
 
 Agora, com nossas mensagens sendo armazenadas em um formato JSON, podemos facilmente analisar e processar essas mensagens de log. Manter o log no formato JSON é uma prática comum em aplicações modernas, pois facilita a análise e o processamento dos logs.
 
-> Murilo, legal, conseguimos guardar nossas mensagens, mas ainda tem mais informações que estão sendo armazenadas nesse log também, o que está acontecendo?
+Vamos ajustar agora nosso logger para que ele possa ser configurado por um arquivo externo. Essa prática é muito comum em aplicações Python, pois permite que a configuração do logger seja feita de forma mais flexível e dinâmica.
 
-Isso mesmo! 
+Vamos criar um arquivo chamado `src/logging_config.py` e adicionar as seguintes configurações nele:
+
+```python title="src/logging_config.py" showLineNumbers=true
+# src/logging_config.py
+import logging
+import logging.handlers
+import time
+
+class LoggerSetup():
+
+    def __init__(self):
+        # Pega a instância do logger
+        self.logger = logging.getLogger('')
+        # Invoca o método que configura o logger
+        self.setup_logging()
+
+    def setup_logging(self):
+        # Adiciona um formatador para o logger - utilizando a sintaxe de JSON
+        LOG_FORMAT = '{"time": "%(asctime)s", "name": "%(name)s", "level": "%(levelname)s", "message": "%(message)s"}'
+        # Setando o nível do log para INFO.
+        logging.basicConfig(level=logging.INFO)
+        # Adiciona o formatador ao logger
+        formatter = logging.Formatter(LOG_FORMAT)
+
+        # Adiciona um handler para que os dados armazenados no logger também possam ser exibidos na tela
+        console=logging.StreamHandler()
+        # Adiciona o formatador para o handler definido
+        console.setFormatter(formatter)
+
+        # Adiciona um gerenciador de rotação para o logs. Esse comportamento faz com que o arquivo que está sendo criado para guardar os logs possa ser alterado de acordo com o tamanho do arquivo ou o tempo de criação. Também é possível definir a quantidade de arquivos anteriores de logs serão armazenados.
+        log_file = "logs/app.log"
+        # Mais informações sobre a classe: https://docs.python.org/3/library/logging.handlers.html#timedrotatingfilehandler
+        # Neste caso, estamos configurando nosso arquivo de log para ser rotacionado a cada 5 minutos, mantendo 3 arquivos anteriores.
+        file = logging.handlers.TimedRotatingFileHandler(log_file, when='M', interval=5, backupCount=3)
+        file.setFormatter(formatter)
+
+        # Com os dois handlers criados, adicionamos eles ao logger
+        self.logger.addHandler(console)
+        self.logger.addHandler(file)
+
+```
+
+Agora ajustamos nosso arquivo `src/main.py` para utilizar nosso novo arquivo de configuração de logs.
+
+```python title="src/main.py" showLineNumbers=true
+# src/main.py
+
+from fastapi import FastAPI, Request
+from routers import usuarios, produtos
+from logging_config import LoggerSetup
+import logging
+
+# Cria um logger raiz
+logger_setup = LoggerSetup()
+
+# Adiciona o logger para o módulo
+LOGGER = logging.getLogger(__name__)
+
+app = FastAPI()
+
+app.include_router(usuarios.router)
+app.include_router(produtos.router)
+
+@app.get("/")
+async def root(request:Request):
+    LOGGER.info("Acessando a rota /")
+    return {"message": "Hello World"}
+
+```
+
+> Opa! Calma ai Murilo, agora não tem mais um monte de mensagens aparecendo no arquivo! O que aconteceu?
+
+Nós ajustamos o nível de mensagens de log para `INFO` no arquivo `logging_config.py`. Isso significa que apenas mensagens de log com nível `INFO` ou superior serão exibidas. Se quisermos exibir mensagens de log com nível `DEBUG`, precisamos ajustar o nível de log para `DEBUG` no arquivo `logging_config.py`.
+
+Outro ponto importante, agora temos um arquivo de configuração de logs que pode ser ajustado de acordo com as necessidades da aplicação. Isso torna a configuração do logger mais flexível e dinâmica.
+
+Outro ponto importante! Observe a lógica de backup do arquivo de log que criamos no arquivo `logging_config.py`. Neste caso, estamos configurando nosso arquivo de log para ser rotacionado a cada 5 minutos, mantendo 3 arquivos anteriores. Isso significa que a cada 5 minutos um novo arquivo de log será criado e os arquivos anteriores serão mantidos. Isso é útil para manter um histórico de logs e evitar que o arquivo de log fique muito grande.
+
+## Adicionando Logs em Rotas
+
+Agora vamos alterar nossos arquivos dos routers para adicionar mensagens de log em cada rota. Vamos começar pelo arquivo `usuarios.py`.
+
+```python title="src/routers/usuarios.py" showLineNumbers=true
+
+```
