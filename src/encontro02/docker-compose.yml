@@ -17,7 +17,8 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_PASSWORD: example
+      POSTGRES_PASSWORD: senha
+      POSTGRES_USER: usuario
 
   adminer:
     image: adminer
